@@ -4,6 +4,8 @@ Remove watermarks from AI-generated images. **100% offline** — your image neve
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**English** · [Español](README-es.md) · [Français](README-fr.md) · [Italiano](README-it.md) · [Deutsch](README-de.md) · [Português](README-pt.md) · [Nederlands](README-nl.md) · [Polski](README-pl.md) · [Română](README-ro.md) · [한국어](README-ko.md) · [日本語](README-ja.md) · [العربية](README-ar.md)
+
 ## Features
 
 - **Drag & drop**, click or Ctrl+V to load an image
