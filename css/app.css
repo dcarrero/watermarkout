@@ -496,8 +496,10 @@ body {
 }
 
 .detect-feedback--notfound {
-  color: var(--fg-muted);
+  color: var(--fg);
   background: var(--bg-elevated);
+  border: 1px dashed var(--fg-muted);
+  line-height: 1.5;
 }
 
 .detect-feedback--maybe {
@@ -584,6 +586,7 @@ body {
 [data-state="image-loaded"] #file-info { display: flex !important; }
 [data-state="image-loaded"] #controls-detect { display: flex !important; }
 [data-state="image-loaded"] #controls-new { display: flex !important; }
+[data-state="image-loaded"] #detect-feedback { display: block !important; }
 
 /* MASK_SELECTED: show action controls */
 [data-state="mask-selected"] #file-info { display: flex !important; }

@@ -207,10 +207,10 @@ async function autoDetect() {
       showFeedback('Posible marca — verificar manualmente', 'maybe');
       transition('mask-selected');
     } else {
-      showFeedback('No se detectó marca. Usa selección manual.', 'notfound');
+      showFeedback('No se detectó marca automáticamente. Usa "Selección manual" para marcar la zona.', 'notfound');
     }
   } catch {
-    // detector.js no existe aún — silencioso
+    showFeedback('Usa "Selección manual" para marcar la zona a eliminar.', 'notfound');
   }
 }
 
