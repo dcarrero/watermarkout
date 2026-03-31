@@ -1,6 +1,11 @@
 /* ==========================================================================
    canvas-utils.js — Utilidades de Canvas y manipulación de píxeles
+   WatermarkOut — https://github.com/dcarrero/watermarkout
+   Copyright (c) 2026 David Carrero (https://carrero.es)
+   Licensed under the MIT License
    ========================================================================== */
+
+import { t } from './i18n.js';
 
 const MAX_DIMENSION = 6000;
 const WARN_DIMENSION = 4000;
@@ -15,7 +20,7 @@ const WARN_DIMENSION = 4000;
 export function loadImageToCanvas(file, canvas) {
   return new Promise((resolve, reject) => {
     if (!file || !file.type.startsWith('image/')) {
-      reject(new Error('Formato no soportado. Usa PNG, JPG o WEBP.'));
+      reject(new Error(t('msgFormat')));
       return;
     }
 
@@ -28,7 +33,7 @@ export function loadImageToCanvas(file, canvas) {
       const { naturalWidth: w, naturalHeight: h } = img;
 
       if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
-        reject(new Error(`Imagen demasiado grande (${w}×${h}). Máximo: ${MAX_DIMENSION}×${MAX_DIMENSION}.`));
+        reject(new Error(t('msgTooLarge', { w, h, max: MAX_DIMENSION })));
         return;
       }
 
@@ -40,7 +45,7 @@ export function loadImageToCanvas(file, canvas) {
 
       const imageData = ctx.getImageData(0, 0, w, h);
       const warning = (w > WARN_DIMENSION || h > WARN_DIMENSION)
-        ? `Imagen grande (${w}×${h}). El procesamiento puede ser lento.`
+        ? t('msgLargeWarn', { w, h })
         : null;
 
       resolve({ width: w, height: h, imageData, filename: file.name, warning });
@@ -48,7 +53,7 @@ export function loadImageToCanvas(file, canvas) {
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('No se pudo leer esta imagen. El archivo puede estar corrupto.'));
+      reject(new Error(t('msgCorrupt')));
     };
 
     img.src = url;

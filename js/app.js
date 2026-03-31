@@ -1,6 +1,8 @@
 /* ==========================================================================
    app.js — Orquestador principal + FSM de estado
-   Bloque 2: FSM completo + interacciones + wiring de botones
+   WatermarkOut — https://github.com/dcarrero/watermarkout
+   Copyright (c) 2026 David Carrero (https://carrero.es)
+   Licensed under the MIT License
    ========================================================================== */
 
 import {
@@ -9,6 +11,7 @@ import {
 } from './canvas-utils.js';
 
 import { setupRectSelector, setupBeforeAfter } from './ui.js';
+import { t, setLang, getLang, getLanguages, initI18n } from './i18n.js';
 
 /* --- Estado global --- */
 
@@ -149,7 +152,7 @@ function updateProgress(pct) {
   const p = Math.round(pct * 100);
   progressBar.style.setProperty('--progress', `${p}%`);
   progressBar.setAttribute('aria-valuenow', p);
-  progressText.textContent = `Eliminando... ${p}%`;
+  progressText.textContent = t('progressText', { pct: p });
 }
 
 /* --- Carga de imagen --- */
@@ -199,18 +202,18 @@ async function autoDetect() {
     if (result.detected && result.confidence >= 0.7) {
       state.mask = result.rect;
       rectSelector.showDetectionRect(result.rect);
-      showFeedback('✦ Marca detectada', 'found');
+      showFeedback(t('detectFound'), 'found');
       transition('mask-selected');
     } else if (result.detected && result.confidence < 0.7) {
       state.mask = result.rect;
       rectSelector.showDetectionRect(result.rect);
-      showFeedback('Posible marca — verificar manualmente', 'maybe');
+      showFeedback(t('detectMaybe'), 'maybe');
       transition('mask-selected');
     } else {
-      showFeedback('No se detectó marca automáticamente. Usa "Selección manual" para marcar la zona.', 'notfound');
+      showFeedback(t('detectNot'), 'notfound');
     }
   } catch {
-    showFeedback('Usa "Selección manual" para marcar la zona a eliminar.', 'notfound');
+    showFeedback(t('detectFallback'), 'notfound');
   }
 }
 
@@ -237,7 +240,7 @@ async function runInpainting() {
     state.workingImageData = workData;
     putImageData(canvasMain, workData);
 
-    showMessage('¡Marca eliminada!', 'success', 3000);
+    showMessage(t('msgSuccess'), 'success', 3000);
     transition('done');
   } catch (err) {
     showMessage(
@@ -319,7 +322,7 @@ function setupButtons() {
     hideFeedback();
     state.mask = null;
     btnRemove.disabled = true;
-    showMessage('Dibuja un rectángulo sobre la marca de agua', 'info', 3000);
+    showMessage(t('msgDraw'), 'info', 3000);
   });
 
   // Eliminar
@@ -327,7 +330,7 @@ function setupButtons() {
     if (state.mask && state.phase === 'mask-selected') {
       const area = state.mask.w * state.mask.h;
       if (area > 200 * 200) {
-        showMessage('Área grande — el procesamiento puede tardar unos segundos.', 'warning', 3000);
+        showMessage(t('msgLargeArea'), 'warning', 3000);
       }
       runInpainting();
     }
@@ -370,9 +373,30 @@ function setupButtons() {
   });
 }
 
+/* --- Language selector --- */
+
+function setupLanguage() {
+  const select = document.getElementById('lang-select');
+  const languages = getLanguages();
+
+  languages.forEach(({ code, name }) => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+
+  select.value = getLang();
+  select.addEventListener('change', () => setLang(select.value));
+}
+
 /* --- Init --- */
 
 function init() {
+  // i18n
+  initI18n();
+  setupLanguage();
+
   // Setup UI modules
   rectSelector = setupRectSelector(canvasOverlay, canvasMain, (rect) => {
     state.mask = rect;

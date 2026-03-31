@@ -1,6 +1,9 @@
 /* ==========================================================================
    WatermarkOut — app.css
    Dark industrial / editorial aesthetic
+   https://github.com/dcarrero/watermarkout
+   Copyright (c) 2026 David Carrero (https://carrero.es)
+   Licensed under the MIT License
    ========================================================================== */
 
 /* --- Fonts (self-hosted, 100% offline) --- */
@@ -557,16 +560,94 @@ body {
   box-shadow: 0 0 0 3px rgba(232, 255, 0, 0.3);
 }
 
-/* --- Disclaimer --- */
+/* --- Language selector --- */
+
+.lang-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space);
+}
+
+.lang-label {
+  font-size: 10px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.lang-select {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 1px solid var(--bg-elevated);
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  outline: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.lang-select:focus-visible {
+  border-color: var(--accent);
+}
+
+.lang-select option {
+  background: var(--bg-surface);
+  color: var(--fg);
+}
+
+/* --- Footer --- */
+
+.panel-footer {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space);
+  padding-top: calc(var(--space) * 2);
+  border-top: 1px solid var(--bg-elevated);
+}
 
 .disclaimer {
-  margin-top: auto;
   font-size: 10px;
   color: var(--fg-muted);
   opacity: 0.6;
   line-height: 1.4;
-  padding-top: calc(var(--space) * 2);
-  border-top: 1px solid var(--bg-elevated);
+}
+
+.credits {
+  font-size: 10px;
+  color: var(--fg-muted);
+  opacity: 0.5;
+  line-height: 1.6;
+}
+
+.credits a {
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.credits a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* --- RTL support --- */
+
+[dir="rtl"] .app {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .panel {
+  border-left: none;
+  border-right: 1px solid var(--bg-elevated);
+}
+
+[dir="rtl"] .slider-label {
+  flex-direction: row-reverse;
 }
 
 /* --- State-based visibility --- */

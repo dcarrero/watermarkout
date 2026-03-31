@@ -1,32 +1,32 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WatermarkOut — Elimina marcas de agua de IA</title>
+  <title>WatermarkOut — Remove AI watermarks</title>
 
   <!-- SEO -->
-  <meta name="description" content="Elimina marcas de agua de imágenes generadas por IA. 100% offline, sin subir tu imagen a ningún servidor. Gratis y sin registro.">
-  <meta name="keywords" content="watermark remover, AI watermark, Gemini, remove watermark, marca de agua, eliminar">
-  <meta name="author" content="WatermarkOut">
+  <meta name="description" content="Remove watermarks from AI-generated images. 100% offline, your image never leaves your browser. Free, no signup required.">
+  <meta name="keywords" content="watermark remover, AI watermark, Gemini, remove watermark, image cleanup, free tool">
+  <meta name="author" content="David Carrero">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://dcarrero.github.io/watermarkout/">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="WatermarkOut — Elimina marcas de agua de IA">
-  <meta property="og:description" content="Herramienta web gratuita para eliminar marcas de agua de imágenes generadas por IA. 100% offline — tu imagen nunca sale de tu navegador.">
+  <meta property="og:title" content="WatermarkOut — Remove AI watermarks">
+  <meta property="og:description" content="Free web tool to remove watermarks from AI-generated images. 100% offline — your image never leaves your browser.">
   <meta property="og:url" content="https://dcarrero.github.io/watermarkout/">
   <meta property="og:site_name" content="WatermarkOut">
   <meta property="og:image" content="https://dcarrero.github.io/watermarkout/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:locale" content="es_ES">
+  <meta property="og:locale" content="en_US">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="WatermarkOut — Elimina marcas de agua de IA">
-  <meta name="twitter:description" content="100% offline. Sin subir tu imagen. Sin registro. Gratis.">
+  <meta name="twitter:title" content="WatermarkOut — Remove AI watermarks">
+  <meta name="twitter:description" content="100% offline. No upload. No signup. Free.">
   <meta name="twitter:image" content="https://dcarrero.github.io/watermarkout/og-image.png">
 
   <!-- Favicon -->
@@ -46,45 +46,48 @@
     <!-- Workspace: canvas area -->
     <div class="workspace">
 
-      <!-- Drop zone (visible only in IDLE state) -->
-      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Arrastra una imagen aquí o haz clic para seleccionar">
+      <!-- Drop zone -->
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" data-i18n="dropTitle" data-i18n-attr="aria-label">
         <div class="dropzone-content">
           <div class="dropzone-icon">✦</div>
-          <p class="dropzone-title">Suelta tu imagen aquí</p>
-          <p class="dropzone-subtitle">o haz clic para seleccionar</p>
-          <p class="dropzone-formats">PNG · JPG · WEBP</p>
+          <p class="dropzone-title" data-i18n="dropTitle">Drop your image here</p>
+          <p class="dropzone-subtitle" data-i18n="dropSubtitle">or click to browse</p>
+          <p class="dropzone-formats" data-i18n="dropFormats">PNG · JPG · WEBP</p>
         </div>
         <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
       </div>
 
-      <!-- Canvas container (visible after image load) -->
+      <!-- Canvas container -->
       <div class="canvas-wrap" id="canvas-wrap">
-        <canvas id="canvas-main" role="img" aria-label="Imagen cargada"></canvas>
+        <canvas id="canvas-main" role="img" aria-label="Loaded image"></canvas>
         <canvas id="canvas-overlay"></canvas>
         <canvas id="canvas-compare"></canvas>
 
-        <!-- Before/After slider (visible only in DONE state) -->
         <div class="ba-slider" id="ba-slider" hidden>
-          <div class="ba-handle" id="ba-handle" aria-label="Comparar antes y después" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
+          <div class="ba-handle" id="ba-handle" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
         </div>
 
-        <!-- Progress bar (visible only in PROCESSING state) -->
         <div class="progress-wrap" id="progress-wrap" hidden>
           <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-          <span class="progress-text" id="progress-text">Eliminando... 0%</span>
+          <span class="progress-text" id="progress-text">Removing... 0%</span>
         </div>
       </div>
 
-      <!-- Messages area -->
       <div class="message" id="message" hidden></div>
     </div>
 
     <!-- Control panel -->
     <aside class="panel" id="panel">
-      <h1 class="panel-brand">WATERMARKOUT</h1>
-      <p class="panel-tagline">100% offline · tu imagen no sale de tu navegador</p>
+      <h1 class="panel-brand" data-i18n="brand">WATERMARKOUT</h1>
+      <p class="panel-tagline" data-i18n="tagline">100% offline · your image never leaves your browser</p>
 
-      <!-- File info (visible after image load) -->
+      <!-- Language selector -->
+      <div class="lang-selector">
+        <label for="lang-select" class="lang-label" data-i18n="language">Language</label>
+        <select id="lang-select" class="lang-select"></select>
+      </div>
+
+      <!-- File info -->
       <div class="file-info" id="file-info" hidden>
         <span class="file-name" id="file-name"></span>
         <span class="file-dims" id="file-dims"></span>
@@ -94,28 +97,27 @@
 
       <!-- Detection controls -->
       <div class="control-group" id="controls-detect" hidden>
-        <button class="btn btn--primary" id="btn-autodetect" aria-label="Auto-detectar marca de agua">
-          ✦ Auto-detectar
+        <button class="btn btn--primary" id="btn-autodetect">
+          <span data-i18n="btnAutodetect">✦ Auto-detect</span>
         </button>
-        <button class="btn btn--secondary" id="btn-manual" aria-label="Selección manual de región">
-          Selección manual
+        <button class="btn btn--secondary" id="btn-manual">
+          <span data-i18n="btnManual">Manual selection</span>
         </button>
       </div>
 
-      <!-- Detection feedback -->
       <div class="detect-feedback" id="detect-feedback" hidden></div>
 
       <!-- Action controls -->
       <div class="control-group" id="controls-action" hidden>
-        <button class="btn btn--accent" id="btn-remove" disabled aria-label="Eliminar marca de agua">
-          Eliminar marca
+        <button class="btn btn--accent" id="btn-remove" disabled>
+          <span data-i18n="btnRemove">Remove watermark</span>
         </button>
       </div>
 
       <!-- Smoothing slider -->
       <div class="control-group" id="controls-smooth" hidden>
         <label class="slider-label" for="slider-smooth">
-          Suavizado
+          <span data-i18n="sliderLabel">Smoothing</span>
           <span class="slider-value" id="smooth-value">1</span>
         </label>
         <input type="range" id="slider-smooth" class="slider" min="0" max="5" value="1" step="1">
@@ -123,24 +125,29 @@
 
       <!-- Result controls -->
       <div class="control-group" id="controls-result" hidden>
-        <button class="btn btn--accent" id="btn-download" aria-label="Descargar imagen limpia como PNG">
-          ↓ Descargar PNG
+        <button class="btn btn--accent" id="btn-download">
+          <span data-i18n="btnDownload">↓ Download PNG</span>
         </button>
-        <button class="btn btn--secondary" id="btn-undo" aria-label="Deshacer y volver a la imagen original">
-          ↺ Deshacer
+        <button class="btn btn--secondary" id="btn-undo">
+          <span data-i18n="btnUndo">↺ Undo</span>
         </button>
       </div>
 
-      <!-- Always-visible new image button (hidden in idle) -->
       <div class="control-group" id="controls-new" hidden>
-        <button class="btn btn--ghost" id="btn-new" aria-label="Cargar una nueva imagen">
-          + Nueva imagen
+        <button class="btn btn--ghost" id="btn-new">
+          <span data-i18n="btnNew">+ New image</span>
         </button>
       </div>
 
-      <!-- Disclaimer -->
-      <footer class="disclaimer">
-        Para uso personal. El usuario es responsable del uso que haga de las imágenes procesadas.
+      <!-- Footer -->
+      <footer class="panel-footer">
+        <p class="disclaimer" data-i18n="disclaimer">For personal use. The user is responsible for the use of processed images.</p>
+        <p class="credits">
+          <span data-i18n="footer">Open Source project by</span>
+          <a href="https://carrero.es" target="_blank" rel="noopener">David Carrero</a>
+          · <span data-i18n="footerOn">Available on</span>
+          <a href="https://github.com/dcarrero/watermarkout" target="_blank" rel="noopener">GitHub</a>
+        </p>
       </footer>
     </aside>
 

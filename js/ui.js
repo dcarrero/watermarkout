@@ -1,6 +1,9 @@
 /* ==========================================================================
    ui.js — Interacciones de usuario
    Selector de región, touch, before/after slider
+   WatermarkOut — https://github.com/dcarrero/watermarkout
+   Copyright (c) 2026 David Carrero (https://carrero.es)
+   Licensed under the MIT License
    ========================================================================== */
 
 import { mouseToImageCoords, drawMaskOverlay, clearOverlay, clampRect } from './canvas-utils.js';

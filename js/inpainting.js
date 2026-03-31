@@ -1,5 +1,8 @@
 /* ==========================================================================
    inpainting.js — Patch-Based Sampling con weighted averaging
+   WatermarkOut — https://github.com/dcarrero/watermarkout
+   Copyright (c) 2026 David Carrero (https://carrero.es)
+   Licensed under the MIT License
 
    Correcciones de la revisión de ingeniería aplicadas:
    - searchRadius dinámico (fix bug crítico para masks >76px)
