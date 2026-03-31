@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WatermarkOut — Elimina marcas de agua</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+</head>
+<body>
+
+  <main class="app" data-state="idle">
+
+    <!-- Workspace: canvas area -->
+    <div class="workspace">
+
+      <!-- Drop zone (visible only in IDLE state) -->
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Arrastra una imagen aquí o haz clic para seleccionar">
+        <div class="dropzone-content">
+          <div class="dropzone-icon">✦</div>
+          <p class="dropzone-title">Suelta tu imagen aquí</p>
+          <p class="dropzone-subtitle">o haz clic para seleccionar</p>
+          <p class="dropzone-formats">PNG · JPG · WEBP</p>
+        </div>
+        <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      </div>
+
+      <!-- Canvas container (visible after image load) -->
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="canvas-main" role="img" aria-label="Imagen cargada"></canvas>
+        <canvas id="canvas-overlay"></canvas>
+        <canvas id="canvas-compare"></canvas>
+
+        <!-- Before/After slider (visible only in DONE state) -->
+        <div class="ba-slider" id="ba-slider" hidden>
+          <div class="ba-handle" id="ba-handle" aria-label="Comparar antes y después" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"></div>
+        </div>
+
+        <!-- Progress bar (visible only in PROCESSING state) -->
+        <div class="progress-wrap" id="progress-wrap" hidden>
+          <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+          <span class="progress-text" id="progress-text">Eliminando... 0%</span>
+        </div>
+      </div>
+
+      <!-- Messages area -->
+      <div class="message" id="message" hidden></div>
+    </div>
+
+    <!-- Control panel -->
+    <aside class="panel" id="panel">
+      <h1 class="panel-brand">WATERMARKOUT</h1>
+      <p class="panel-tagline">100% offline · tu imagen no sale de tu navegador</p>
+
+      <!-- File info (visible after image load) -->
+      <div class="file-info" id="file-info" hidden>
+        <span class="file-name" id="file-name"></span>
+        <span class="file-dims" id="file-dims"></span>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Detection controls -->
+      <div class="control-group" id="controls-detect" hidden>
+        <button class="btn btn--primary" id="btn-autodetect" aria-label="Auto-detectar marca de agua">
+          ✦ Auto-detectar
+        </button>
+        <button class="btn btn--secondary" id="btn-manual" aria-label="Selección manual de región">
+          Selección manual
+        </button>
+      </div>
+
+      <!-- Detection feedback -->
+      <div class="detect-feedback" id="detect-feedback" hidden></div>
+
+      <!-- Action controls -->
+      <div class="control-group" id="controls-action" hidden>
+        <button class="btn btn--accent" id="btn-remove" disabled aria-label="Eliminar marca de agua">
+          Eliminar marca
+        </button>
+      </div>
+
+      <!-- Smoothing slider -->
+      <div class="control-group" id="controls-smooth" hidden>
+        <label class="slider-label" for="slider-smooth">
+          Suavizado
+          <span class="slider-value" id="smooth-value">1</span>
+        </label>
+        <input type="range" id="slider-smooth" class="slider" min="0" max="5" value="1" step="1">
+      </div>
+
+      <!-- Result controls -->
+      <div class="control-group" id="controls-result" hidden>
+        <button class="btn btn--accent" id="btn-download" aria-label="Descargar imagen limpia como PNG">
+          ↓ Descargar PNG
+        </button>
+        <button class="btn btn--secondary" id="btn-undo" aria-label="Deshacer y volver a la imagen original">
+          ↺ Deshacer
+        </button>
+      </div>
+
+      <!-- Always-visible new image button (hidden in idle) -->
+      <div class="control-group" id="controls-new" hidden>
+        <button class="btn btn--ghost" id="btn-new" aria-label="Cargar una nueva imagen">
+          + Nueva imagen
+        </button>
+      </div>
+
+      <!-- Disclaimer -->
+      <footer class="disclaimer">
+        Para uso personal. El usuario es responsable del uso que haga de las imágenes procesadas.
+      </footer>
+    </aside>
+
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
