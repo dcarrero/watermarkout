@@ -1,6 +1,6 @@
 /* ==========================================================================
    detector.js — Auto-detección de marca de agua Gemini
-   Usa análisis de componentes conectados + verificación de forma.
+   Usa análisis de componentes conectados + luminancia RELATIVA.
    Interfaz pluggable: {detected, rect, confidence}
    ========================================================================== */
 
@@ -9,10 +9,11 @@
  *
  * Algoritmo:
  * 1. Escanea la esquina inferior-derecha (12% de la imagen)
- * 2. Encuentra píxeles de alta luminancia como candidatos
- * 3. Agrupa candidatos en clusters (componentes conectados)
- * 4. Filtra clusters por tamaño, aspect ratio (~1:1) y aislamiento
- * 5. Retorna el cluster más probable como watermark
+ * 2. Calcula luminancia media local del fondo
+ * 3. Encuentra píxeles significativamente más brillantes que el fondo (relativos)
+ * 4. Agrupa candidatos en clusters (componentes conectados)
+ * 5. Filtra clusters por tamaño, aspect ratio (~1:1) y aislamiento
+ * 6. Retorna el cluster más probable como watermark
  *
  * @param {ImageData} imageData
  * @param {number} width
@@ -28,37 +29,40 @@ export function detectGeminiWatermark(imageData, width, height) {
   const searchW = width - searchX;
   const searchH = height - searchY;
 
-  // Paso 1: Encontrar píxeles candidatos por luminancia
-  const candidates = findBrightPixels(data, width, searchX, searchY, searchW, searchH);
+  // Paso 1: Calcular luminancia media del fondo en la zona de búsqueda
+  const bgLum = computeAverageLuminance(data, width, searchX, searchY, searchW, searchH);
 
-  if (candidates.length < 15) {
+  // Paso 2: Encontrar píxeles candidatos por luminancia RELATIVA al fondo
+  const candidates = findBrightPixels(data, width, searchX, searchY, searchW, searchH, bgLum);
+
+  if (candidates.length < 10) {
     return { detected: false, rect: null, confidence: 0 };
   }
 
-  // Paso 2: Agrupar en clusters por componentes conectados
-  const clusters = findClusters(candidates, 3); // distancia máx 3px entre vecinos
+  // Paso 3: Agrupar en clusters por componentes conectados
+  const clusters = findClusters(candidates, 3);
 
   if (clusters.length === 0) {
     return { detected: false, rect: null, confidence: 0 };
   }
 
-  // Paso 3: Evaluar cada cluster
+  // Paso 4: Evaluar cada cluster
   let bestCluster = null;
   let bestScore = 0;
 
   for (const cluster of clusters) {
-    const score = evaluateCluster(cluster, data, width, height, searchX, searchY, searchW, searchH);
+    const score = evaluateCluster(cluster, data, width, height, bgLum);
     if (score > bestScore) {
       bestScore = score;
       bestCluster = cluster;
     }
   }
 
-  if (!bestCluster || bestScore < 0.2) {
+  if (!bestCluster || bestScore < 0.15) {
     return { detected: false, rect: null, confidence: 0 };
   }
 
-  // Paso 4: Calcular bounding box con margen
+  // Paso 5: Calcular bounding box con margen
   const bbox = clusterBoundingBox(bestCluster);
   const margin = 10;
   const rect = {
@@ -75,11 +79,33 @@ export function detectGeminiWatermark(imageData, width, height) {
   };
 }
 
-/* --- Paso 1: Píxeles brillantes --- */
+/* --- Luminancia media del fondo --- */
 
-function findBrightPixels(data, imgWidth, sx, sy, sw, sh) {
-  const LUM_THRESHOLD = 200;
-  const ALPHA_THRESHOLD = 80;
+function computeAverageLuminance(data, imgWidth, sx, sy, sw, sh) {
+  let totalLum = 0;
+  let count = 0;
+  // Muestrear cada 3 píxeles para velocidad
+  const step = 3;
+
+  for (let dy = 0; dy < sh; dy += step) {
+    for (let dx = 0; dx < sw; dx += step) {
+      const idx = ((sy + dy) * imgWidth + (sx + dx)) * 4;
+      totalLum += 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+      count++;
+    }
+  }
+
+  return count > 0 ? totalLum / count : 128;
+}
+
+/* --- Paso 2: Píxeles brillantes (relativo al fondo) --- */
+
+function findBrightPixels(data, imgWidth, sx, sy, sw, sh, bgLum) {
+  // Umbral adaptativo: el píxel debe ser significativamente más brillante que el fondo
+  // En fondos oscuros (bgLum < 80): umbral absoluto de 180
+  // En fondos claros (bgLum > 150): buscar píxeles que estén al menos 30 puntos sobre el fondo
+  const threshold = Math.max(180, bgLum + 30);
+  const ALPHA_THRESHOLD = 50;
   const candidates = [];
 
   for (let dy = 0; dy < sh; dy++) {
@@ -95,8 +121,34 @@ function findBrightPixels(data, imgWidth, sx, sy, sw, sh) {
 
       const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
-      if (lum > LUM_THRESHOLD && a > ALPHA_THRESHOLD) {
+      if (lum > threshold && a > ALPHA_THRESHOLD) {
         candidates.push({ x, y, lum });
+      }
+    }
+  }
+
+  // Si el umbral adaptativo no encontró suficientes candidatos,
+  // intentar con un delta menor (la estrella puede tener poco contraste)
+  if (candidates.length < 10 && bgLum > 100) {
+    candidates.length = 0;
+    const softThreshold = bgLum + 15;
+
+    for (let dy = 0; dy < sh; dy++) {
+      for (let dx = 0; dx < sw; dx++) {
+        const x = sx + dx;
+        const y = sy + dy;
+        const idx = (y * imgWidth + x) * 4;
+
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const a = data[idx + 3];
+
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+        if (lum > softThreshold && a > ALPHA_THRESHOLD) {
+          candidates.push({ x, y, lum });
+        }
       }
     }
   }
@@ -104,14 +156,14 @@ function findBrightPixels(data, imgWidth, sx, sy, sw, sh) {
   return candidates;
 }
 
-/* --- Paso 2: Componentes conectados --- */
+/* --- Paso 3: Componentes conectados --- */
 
 function findClusters(pixels, maxDist) {
   const visited = new Set();
   const clusters = [];
   const maxDistSq = maxDist * maxDist;
 
-  // Index espacial simple para acelerar vecinos
+  // Index espacial para acelerar vecinos
   const grid = new Map();
   const cellSize = maxDist + 1;
 
@@ -163,74 +215,89 @@ function findClusters(pixels, maxDist) {
       }
     }
 
-    if (cluster.length >= 15) {
+    if (cluster.length >= 10) {
       clusters.push(cluster);
     }
   }
 
+  // Ordenar por tamaño (los clusters más pequeños primero — la estrella es pequeña)
+  clusters.sort((a, b) => a.length - b.length);
+
   return clusters;
 }
 
-/* --- Paso 3: Evaluar cluster --- */
+/* --- Paso 4: Evaluar cluster --- */
 
-function evaluateCluster(cluster, data, imgWidth, imgHeight, sx, sy, sw, sh) {
+function evaluateCluster(cluster, data, imgWidth, imgHeight, bgLum) {
   const bbox = clusterBoundingBox(cluster);
   let score = 0;
 
-  // Factor 1: Tamaño razonable (entre 10px y 80px)
+  // Factor 1: Tamaño razonable (entre 8px y 100px)
   const size = Math.max(bbox.w, bbox.h);
-  if (size >= 10 && size <= 80) {
+  if (size >= 8 && size <= 100) {
     score += 0.25;
-  } else if (size > 80 && size <= 150) {
+  } else if (size > 100 && size <= 200) {
     score += 0.1;
   } else {
-    return 0; // demasiado grande o pequeño
+    return 0;
   }
 
   // Factor 2: Aspect ratio cercano a 1:1 (la estrella es cuadrada)
   const aspect = bbox.w / (bbox.h || 1);
-  if (aspect > 0.6 && aspect < 1.6) {
-    score += 0.25;
-  } else {
-    score += 0.05;
-  }
-
-  // Factor 3: Densidad del cluster (estrella es ~30-60% del bbox)
-  const area = bbox.w * bbox.h;
-  const density = cluster.length / (area || 1);
-  if (density > 0.15 && density < 0.75) {
+  if (aspect > 0.5 && aspect < 2.0) {
     score += 0.2;
   } else {
-    score += 0.05;
+    score += 0.03;
   }
 
-  // Factor 4: Aislamiento — los píxeles alrededor deben ser más oscuros
-  const isolation = measureIsolation(bbox, data, imgWidth, imgHeight);
-  score += isolation * 0.3;
+  // Factor 3: Densidad del cluster (estrella es ~20-60% del bbox)
+  const area = bbox.w * bbox.h;
+  const density = cluster.length / (area || 1);
+  if (density > 0.1 && density < 0.8) {
+    score += 0.2;
+  } else {
+    score += 0.03;
+  }
+
+  // Factor 4: Contraste con entorno local (más importante que aislamiento absoluto)
+  const contrast = measureLocalContrast(bbox, cluster, data, imgWidth, imgHeight, bgLum);
+  score += contrast * 0.35;
 
   return score;
 }
 
-function measureIsolation(bbox, data, imgWidth, imgHeight) {
-  const margin = 6;
-  let darkCount = 0;
-  let totalSampled = 0;
+/**
+ * Mide el contraste entre el cluster y sus píxeles vecinos inmediatos.
+ * Funciona tanto en fondos oscuros como claros.
+ */
+function measureLocalContrast(bbox, cluster, data, imgWidth, imgHeight, bgLum) {
+  // Calcular luminancia media del cluster
+  let clusterLum = 0;
+  for (const p of cluster) {
+    const idx = (p.y * imgWidth + p.x) * 4;
+    clusterLum += 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+  }
+  clusterLum /= cluster.length;
 
-  // Muestrear píxeles en un anillo de 'margin' px alrededor del bbox
+  // Calcular luminancia media del anillo de 8px alrededor del bbox
+  const margin = 8;
+  let surroundLum = 0;
+  let surroundCount = 0;
+
   for (let side = 0; side < 4; side++) {
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 30; i++) {
       let x, y;
 
-      if (side === 0) { // arriba
+      if (side === 0) {
         x = bbox.x + Math.random() * bbox.w;
         y = bbox.y - margin;
-      } else if (side === 1) { // abajo
+      } else if (side === 1) {
         x = bbox.x + Math.random() * bbox.w;
         y = bbox.y + bbox.h + margin;
-      } else if (side === 2) { // izquierda
+      } else if (side === 2) {
         x = bbox.x - margin;
         y = bbox.y + Math.random() * bbox.h;
-      } else { // derecha
+      } else {
         x = bbox.x + bbox.w + margin;
         y = bbox.y + Math.random() * bbox.h;
       }
@@ -241,14 +308,22 @@ function measureIsolation(bbox, data, imgWidth, imgHeight) {
       if (x < 0 || x >= imgWidth || y < 0 || y >= imgHeight) continue;
 
       const idx = (y * imgWidth + x) * 4;
-      const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-
-      totalSampled++;
-      if (lum < 160) darkCount++;
+      surroundLum += 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
+      surroundCount++;
     }
   }
 
-  return totalSampled > 0 ? darkCount / totalSampled : 0;
+  if (surroundCount === 0) return 0;
+  surroundLum /= surroundCount;
+
+  // El contraste es la diferencia relativa entre el cluster y su entorno
+  const diff = Math.abs(clusterLum - surroundLum);
+
+  // Normalizar: diff de 30+ es excelente, 15 es ok, <10 es débil
+  if (diff > 30) return 1.0;
+  if (diff > 15) return 0.7;
+  if (diff > 8) return 0.4;
+  return 0.1;
 }
 
 /* --- Helpers --- */
