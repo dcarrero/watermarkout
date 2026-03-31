@@ -615,13 +615,95 @@ body {
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-@keyframes fadeInCanvas {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseAccent {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 255, 0, 0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(232, 255, 0, 0); }
+}
+
+/* Canvas appears with scale */
 .canvas-wrap {
-  animation: fadeInCanvas 0.3s ease;
+  animation: fadeInScale 0.35s ease;
+}
+
+/* Control groups animate in when shown */
+.control-group {
+  animation: fadeInUp 0.25s ease;
+}
+
+/* Detection feedback animates in */
+.detect-feedback {
+  animation: fadeInUp 0.2s ease;
+}
+
+/* File info slides in */
+.file-info {
+  animation: slideInRight 0.3s ease;
+}
+
+/* Before/after handle pulses to invite interaction */
+[data-state="done"] .ba-handle {
+  animation: pulseAccent 2s ease-in-out 0.5s 3;
+}
+
+/* Progress bar has smooth fill animation */
+.progress-bar::after {
+  transition: width 0.15s linear;
+}
+
+/* Drop zone hover transition */
+.dropzone {
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.dropzone:hover {
+  transform: scale(1.005);
+}
+
+.dropzone.drag-over {
+  transform: scale(1.01);
+}
+
+/* Buttons have micro-interactions */
+.btn {
+  transition: all 0.15s ease;
+}
+
+.btn--primary:active:not(:disabled),
+.btn--accent:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Smooth transitions for slider thumb */
+.slider::-webkit-slider-thumb {
+  transition: transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.slider::-webkit-slider-thumb:active {
+  transform: scale(0.95);
+}
+
+/* Message toast */
+.message {
+  animation: fadeIn 0.25s ease;
 }
 
 /* --- Responsive: Tablet (<1024px) --- */
